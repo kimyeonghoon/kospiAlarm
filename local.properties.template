@@ -1,0 +1,8 @@
+## This file must NOT be checked into Version Control Systems,
+# as it contains information specific to your local configuration.
+#
+# Location of the Android SDK. For details on how to configure SDK paths,
+# see https://developer.android.com/studio/command-line/variables
+#
+# Example (modify this path to match your local Android SDK installation):
+sdk.dir=/home/YOUR_USERNAME/Android/Sdk
