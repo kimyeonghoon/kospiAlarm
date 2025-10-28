@@ -1,6 +1,7 @@
 package com.ioniere.kospialarm.presentation.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -238,6 +239,7 @@ fun ErrorMessage(message: String) {
  * @param onDismiss 취소 콜백
  * @param onConfirm 확인 콜백
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddAlarmDialog(
     currentKospi: Double,

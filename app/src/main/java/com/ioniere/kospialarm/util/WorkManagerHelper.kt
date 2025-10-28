@@ -35,7 +35,7 @@ object WorkManagerHelper {
             .setConstraints(constraints)
             .setBackoffCriteria(
                 BackoffPolicy.LINEAR,
-                PeriodicWorkRequest.MIN_BACKOFF_MILLIS,
+                10000L,
                 TimeUnit.MILLISECONDS
             )
             .build()
