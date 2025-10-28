@@ -18,8 +18,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("boolean", "DEBUG", "true")
+        }
         release {
             isMinifyEnabled = false
+            buildConfigField("boolean", "DEBUG", "false")
         }
     }
 
@@ -34,6 +38,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
