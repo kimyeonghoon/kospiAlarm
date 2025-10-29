@@ -320,4 +320,4 @@ data class YahooFinanceResponse(
 
 **Last Updated**: 2025-10-29
 **Version**: 1.0.0
-**Repository**: https://github.com/kimyeonghoon/kospiAlram
+**Repository**: https://github.com/kimyeonghoon/kospiAlarm
