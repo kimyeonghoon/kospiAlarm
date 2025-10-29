@@ -18,11 +18,35 @@ object WorkManagerHelper {
 
     /**
      * 주기적인 코스피 체크 작업 시작.
+     * 매시 0분, 15분, 30분, 45분에 실행되도록 스케줄링.
      *
      * @param context Context
      */
     fun startPeriodicKospiCheck(context: Context) {
         Timber.d("startPeriodicKospiCheck: 주기적 작업 시작")
+
+        // 다음 정시(0, 15, 30, 45분)까지의 시간 계산
+        val currentTime = Calendar.getInstance()
+        val currentMinute = currentTime.get(Calendar.MINUTE)
+        val currentSecond = currentTime.get(Calendar.SECOND)
+
+        // 다음 정시 분 계산 (0, 15, 30, 45)
+        val nextQuarterMinute = when {
+            currentMinute < 15 -> 15
+            currentMinute < 30 -> 30
+            currentMinute < 45 -> 45
+            else -> 0  // 다음 시간의 0분
+        }
+
+        // 다음 정시까지의 시간 계산 (초 단위)
+        val minutesUntilNext = if (nextQuarterMinute == 0) {
+            60 - currentMinute
+        } else {
+            nextQuarterMinute - currentMinute
+        }
+        val secondsUntilNext = (minutesUntilNext * 60) - currentSecond
+
+        Timber.d("startPeriodicKospiCheck: 현재 시각=${currentMinute}:${currentSecond}, 다음 실행=${nextQuarterMinute}분, 대기시간=${secondsUntilNext}초")
 
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -35,6 +59,7 @@ object WorkManagerHelper {
             TimeUnit.MINUTES
         )
             .setConstraints(constraints)
+            .setInitialDelay(secondsUntilNext.toLong(), TimeUnit.SECONDS)
             .setBackoffCriteria(
                 BackoffPolicy.LINEAR,
                 10000L,
@@ -44,11 +69,11 @@ object WorkManagerHelper {
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             KospiCheckWorker.WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.REPLACE,  // REPLACE로 변경하여 새 스케줄 적용
             workRequest
         )
 
-        Timber.i("startPeriodicKospiCheck: 주기적 작업 등록 완료 (${REPEAT_INTERVAL_MINUTES}분 간격)")
+        Timber.i("startPeriodicKospiCheck: 주기적 작업 등록 완료 (매시 0, 15, 30, 45분 실행)")
     }
 
     /**

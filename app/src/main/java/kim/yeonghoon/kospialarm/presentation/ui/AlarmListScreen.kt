@@ -137,33 +137,35 @@ fun StrategyGuideCard() {
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(20.dp)
         ) {
             Text(
                 text = "💡 투자 전략 가이드",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "• 매일 인버스 적립: 3,000원",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "• 롱 포지션: 절대 매도 금지",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "• 조정 시: 추가 매수 자금 활용",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "✓ 인버스 = 헷지 목적 (함부로 안 팔게 됨)\n✓ 롱 100% 유지 = 타이밍 놓칠 걱정 없음\n✓ 소액 루틴 = 충동적 결정 방지",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
             )
         }
@@ -188,11 +190,12 @@ fun KospiInfoCard(kospiData: KospiData?) {
             if (kospiData != null) {
                 Text(
                     text = "KOSPI ${String.format("%.2f", kospiData.index)}",
-                    style = MaterialTheme.typography.headlineMedium
+                    style = MaterialTheme.typography.displaySmall
                 )
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "변동: ${String.format("%.2f", kospiData.changePercent)}%",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     color = if (kospiData.changePercent >= 0)
                         MaterialTheme.colorScheme.primary
                     else
@@ -239,11 +242,12 @@ fun AlarmCard(
 
                 Text(
                     text = "${alarm.percentage}% $typeText (${String.format("%.2f", targetValue)})",
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleLarge
                 )
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "기준: ${String.format("%.2f", alarm.baseValue)}",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
