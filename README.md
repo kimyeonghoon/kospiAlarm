@@ -4,9 +4,12 @@
 
 ## 기능
 
-- 📊 실시간 코스피 지수 모니터링 (5분마다)
-- 🔔 퍼센트 기반 알림 (5%, 10%, 15%, 20% 상승/하락)
-- 📱 여러 알림 조건 동시 설정
+- 📊 실시간 코스피 지수 모니터링 (Yahoo Finance API)
+- 🔔 퍼센트 기반 알림 (5%, 10% 상승/하락, 최대 2개)
+- ⏰ 정시 체크 (매시 0분, 15분, 30분, 45분)
+- 📅 일일 알림 (09:15 장 시작, 15:15 장 마감 임박)
+- 🕒 장 시간 체크 (월~금, 09:00-15:30)
+- 💡 투자 전략 가이드 제공
 - 🔄 백그라운드 자동 체크 (WorkManager)
 - 🎨 Material Design 3 UI
 - 🌙 다크 모드 지원
@@ -25,10 +28,10 @@
 ## 프로젝트 구조
 
 ```
-com.ioniere.kospialarm/
+kim.yeonghoon.kospialarm/
 ├── data/           # 데이터 계층
 │   ├── local/      # Room 데이터베이스
-│   ├── remote/     # Retrofit API
+│   ├── remote/     # Retrofit API (Yahoo Finance)
 │   └── repository/ # Repository 구현
 ├── domain/         # 비즈니스 로직
 │   ├── model/      # 도메인 모델
@@ -93,29 +96,31 @@ sdk.dir=/your/path/to/Android/Sdk
 ### ✅ 구현 완료
 - Domain 계층 (모델, Repository, UseCase)
 - Data 계층 (Room, Retrofit, Repository 구현)
+- Yahoo Finance API 연동 (실시간 KOSPI 데이터)
 - DI 설정 (Hilt)
-- WorkManager 백그라운드 체크
-- 알림 시스템
+- WorkManager 정시 체크 (0, 15, 30, 45분)
+- 일일 알림 (09:15, 15:15)
+- 장 시간 체크 로직
+- 알림 중복 방지 (자동 비활성화)
+- 알림 시스템 (진동 패턴 포함)
 - ViewModel 및 UI (Compose)
-- Mock API (테스트용)
+- 투자 전략 가이드 카드
+- 실제 기기 테스트 완료
 
 ### 🚧 향후 작업
-- [ ] 실제 코스피 API 연동
 - [ ] 알림 히스토리 화면
 - [ ] 여러 종목 지원
 - [ ] 위젯 추가
 - [ ] 단위 테스트 작성
 - [ ] UI 테스트 작성
+- [ ] Play Store 배포
 
-## Mock API 사용
+## API 연동
 
-현재 실제 API가 연동되지 않아 Mock API를 사용합니다.
-`MockKospiApiService`는 랜덤한 코스피 데이터를 생성합니다.
-
-실제 API로 전환하려면:
-1. `NetworkModule.kt`에서 `USE_MOCK_API = false`로 변경
-2. `BASE_URL`을 실제 API 주소로 변경
-3. 필요시 `KospiApiService` 인터페이스 수정
+현재 Yahoo Finance API를 통해 실시간 KOSPI 데이터를 가져옵니다.
+- 엔드포인트: `https://query1.finance.yahoo.com/v8/finance/chart/^KS11`
+- 무료 API (인증 불필요)
+- 실시간 지수, 변동률 제공
 
 ## 권한
 

@@ -4,10 +4,14 @@
 코스피 지수를 모니터링하고 특정 퍼센트 임계값에 도달하면 알림을 보내는 Android 애플리케이션입니다.
 
 ### 주요 기능
-- 무료 API를 통한 실시간 코스피 지수 모니터링 (5분마다)
-- 퍼센트 기반 알림: 5%, 10%, 15%, 20% (상승 및 하락 모두)
-- 여러 알림 조건 동시 설정 가능
+- Yahoo Finance API를 통한 실시간 코스피 지수 모니터링
+- 퍼센트 기반 알림: 5%, 10% (상승 및 하락, 최대 2개)
+- 매시 정시 체크: 0분, 15분, 30분, 45분
+- 일일 알림: 09:15 (장 시작), 15:15 (장 마감 임박)
+- 장 시간 검증 (월~금, 09:00-15:30)
+- 투자 전략 가이드 카드
 - WorkManager를 통한 백그라운드 모니터링
+- 알림 자동 비활성화 (중복 방지)
 - 알림 히스토리 (향후 기능)
 - 여러 종목 지원 (향후 기능)
 
@@ -17,8 +21,9 @@
 - **UI**: Jetpack Compose (Material Design 3)
 - **DI**: Hilt
 - **데이터베이스**: Room
-- **네트워크**: Retrofit
-- **백그라운드**: WorkManager (5분마다 항상 실행)
+- **네트워크**: Retrofit (Yahoo Finance API)
+- **백그라운드**: WorkManager (매시 :00, :15, :30, :45 실행)
+- **로깅**: Timber
 - **최소 SDK**: 28 (Android 9.0)
 - **타겟 SDK**: 34
 
@@ -26,10 +31,10 @@
 
 ### 계층 구조
 ```
-com.ioniere.kospialarm/
+kim.yeonghoon.kospialarm/
 ├── data/           # 데이터 소스, 레포지토리 구현
 │   ├── local/      # Room 데이터베이스, DAO, 엔티티
-│   ├── remote/     # Retrofit API 서비스, DTO
+│   ├── remote/     # Retrofit API 서비스, DTO (Yahoo Finance)
 │   └── repository/ # 레포지토리 구현체
 ├── domain/         # 비즈니스 로직
 │   ├── model/      # 도메인 모델
@@ -39,8 +44,8 @@ com.ioniere.kospialarm/
 │   ├── ui/         # Compose 스크린
 │   └── viewmodel/  # 뷰모델
 ├── di/             # Hilt 모듈
-├── worker/         # WorkManager 워커
-└── util/           # 유틸리티, 확장 함수
+├── worker/         # WorkManager 워커 (KospiCheckWorker, DailyKospiNotificationWorker)
+└── util/           # 유틸리티, 확장 함수 (WorkManagerHelper, NotificationHelper)
 ```
 
 ### 네이밍 컨벤션
@@ -196,10 +201,14 @@ Constraints.Builder()
 ```
 
 ### 실행
-- **간격**: 5분 (PeriodicWorkRequest)
-- **Flex 간격**: 1분
+- **간격**: 15분 (PeriodicWorkRequest)
+- **스케줄**: 매시 :00, :15, :30, :45 실행 (시계에 정렬)
+- **초기 지연**: 다음 15분 단위까지 계산
+- **Flex 간격**: 5분
 - **백오프 정책**: LINEAR (워커 실패 시 재시도용)
-- **결과 유지**: 마지막 10개 작업 정보 상태
+- **정책**: REPLACE (앱 재시작 시 새 스케줄 적용)
+- **장 시간**: 월~금 09:00-15:30만 실행
+- **일일 알림**: 09:15 (장 시작), 15:15 (장 마감 임박)
 
 ## UI 가이드라인
 
@@ -267,19 +276,32 @@ Constraints.Builder()
 ## API 통합 참고사항
 
 ### 코스피 데이터 소스
-- 미정: 코스피 지수 데이터를 위한 무료 API
-- 필수 필드: 현재 지수 값, 타임스탬프
-- 폴백 전략: 주 API 실패 시 에러 로그 및 사용자에게 알림
+- **API**: Yahoo Finance (`https://query1.finance.yahoo.com/v8/finance/chart/^KS11`)
+- **심볼**: ^KS11 (KOSPI 지수)
+- **인증**: 불필요 (무료 API)
+- **필드**: 현재 지수 값, 변화량, 변화율, 타임스탬프
+- **구현**: `YahooFinanceKospiService`
+- **폴백**: 연속 실패 추적, 3회 실패 후 알림 (15분)
 
 ### 응답 처리
 ```kotlin
-// 예상 구조 (예시)
-data class KospiResponse(
-    val index: Double,      // 현재 코스피 값
-    val timestamp: Long,    // Unix 타임스탬프
-    val change: Double,     // 이전 대비 변화량
-    val changePercent: Double // 변화율(%)
-)
+data class YahooFinanceResponse(
+    val chart: Chart
+) {
+    data class Chart(
+        val result: List<Result>
+    ) {
+        data class Result(
+            val meta: Meta,
+            val indicators: Indicators
+        ) {
+            data class Meta(
+                val regularMarketPrice: Double,  // 현재 코스피 값
+                val previousClose: Double         // 전일 종가
+            )
+        }
+    }
+}
 ```
 
 ## 문제 해결
@@ -296,5 +318,6 @@ data class KospiResponse(
 
 ---
 
-**최종 업데이트**: 2025-10-28
+**최종 업데이트**: 2025-10-29
 **버전**: 1.0.0
+**저장소**: https://github.com/kimyeonghoon/kospiAlram

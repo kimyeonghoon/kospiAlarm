@@ -4,10 +4,14 @@
 Android application that monitors KOSPI index and sends notifications when specific percentage thresholds are reached.
 
 ### Key Features
-- Real-time KOSPI index monitoring via free API (every 5 minutes)
-- Percentage-based alerts: 5%, 10%, 15%, 20% (both rise and fall)
-- Multiple simultaneous alert conditions
+- Real-time KOSPI index monitoring via Yahoo Finance API
+- Percentage-based alerts: 5%, 10% (both rise and fall, max 2 alarms)
+- Scheduled checks at :00, :15, :30, :45 every hour
+- Daily notifications at 09:15 (market open) and 15:15 (market close)
+- Market hours validation (Mon-Fri, 09:00-15:30)
+- Investment strategy guide card
 - Background monitoring with WorkManager
+- Alarm auto-disable after trigger (prevents duplicates)
 - Notification history (future feature)
 - Multiple stock support (future feature)
 
@@ -17,8 +21,9 @@ Android application that monitors KOSPI index and sends notifications when speci
 - **UI**: Jetpack Compose (Material Design 3)
 - **DI**: Hilt
 - **Database**: Room
-- **Network**: Retrofit
-- **Background**: WorkManager (runs every 5 minutes, always)
+- **Network**: Retrofit (Yahoo Finance API)
+- **Background**: WorkManager (runs at :00, :15, :30, :45 every hour)
+- **Logging**: Timber
 - **Min SDK**: 28 (Android 9.0)
 - **Target SDK**: 34
 
@@ -26,10 +31,10 @@ Android application that monitors KOSPI index and sends notifications when speci
 
 ### Layer Structure
 ```
-com.ioniere.kospialarm/
+kim.yeonghoon.kospialarm/
 ├── data/           # Data sources, repositories implementation
 │   ├── local/      # Room database, DAOs, entities
-│   ├── remote/     # Retrofit API services, DTOs
+│   ├── remote/     # Retrofit API services, DTOs (Yahoo Finance)
 │   └── repository/ # Repository implementations
 ├── domain/         # Business logic
 │   ├── model/      # Domain models
@@ -39,8 +44,8 @@ com.ioniere.kospialarm/
 │   ├── ui/         # Compose screens
 │   └── viewmodel/  # ViewModels
 ├── di/             # Hilt modules
-├── worker/         # WorkManager workers
-└── util/           # Utilities, extensions
+├── worker/         # WorkManager workers (KospiCheckWorker, DailyKospiNotificationWorker)
+└── util/           # Utilities, extensions (WorkManagerHelper, NotificationHelper)
 ```
 
 ### Naming Conventions
@@ -196,10 +201,14 @@ Constraints.Builder()
 ```
 
 ### Execution
-- **Interval**: 5 minutes (PeriodicWorkRequest)
-- **Flex Interval**: 1 minute
+- **Interval**: 15 minutes (PeriodicWorkRequest)
+- **Schedule**: Runs at :00, :15, :30, :45 every hour (aligned to clock)
+- **Initial Delay**: Calculated to next quarter hour
+- **Flex Interval**: 5 minutes
 - **Backoff Policy**: LINEAR (for retries if worker fails)
-- **Keep Results**: Last 10 work info states
+- **Policy**: REPLACE (applies new schedule on app restart)
+- **Market Hours**: Only runs Mon-Fri 09:00-15:30
+- **Daily Notifications**: 09:15 (market open), 15:15 (near market close)
 
 ## UI Guidelines
 
@@ -267,19 +276,32 @@ Consider migrating to Gradle version catalogs for dependency management.
 ## API Integration Notes
 
 ### KOSPI Data Source
-- To be determined: Free API for KOSPI index data
-- Required fields: current index value, timestamp
-- Fallback strategy: If primary API fails, log error and notify user
+- **API**: Yahoo Finance (`https://query1.finance.yahoo.com/v8/finance/chart/^KS11`)
+- **Symbol**: ^KS11 (KOSPI Index)
+- **Auth**: None required (free API)
+- **Fields**: current index value, change, change percent, timestamp
+- **Implementation**: `YahooFinanceKospiService`
+- **Fallback**: Tracks consecutive failures, notifies after 3 failures (15 minutes)
 
 ### Response Handling
 ```kotlin
-// Expected structure (example)
-data class KospiResponse(
-    val index: Double,      // Current KOSPI value
-    val timestamp: Long,    // Unix timestamp
-    val change: Double,     // Change from previous
-    val changePercent: Double // Percentage change
-)
+data class YahooFinanceResponse(
+    val chart: Chart
+) {
+    data class Chart(
+        val result: List<Result>
+    ) {
+        data class Result(
+            val meta: Meta,
+            val indicators: Indicators
+        ) {
+            data class Meta(
+                val regularMarketPrice: Double,  // Current KOSPI value
+                val previousClose: Double         // Previous close
+            )
+        }
+    }
+}
 ```
 
 ## Troubleshooting
@@ -296,5 +318,6 @@ data class KospiResponse(
 
 ---
 
-**Last Updated**: 2025-10-28
+**Last Updated**: 2025-10-29
 **Version**: 1.0.0
+**Repository**: https://github.com/kimyeonghoon/kospiAlram
