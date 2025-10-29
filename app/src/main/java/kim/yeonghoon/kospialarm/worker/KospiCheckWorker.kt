@@ -131,6 +131,10 @@ class KospiCheckWorker @AssistedInject constructor(
                 )
                 repository.saveAlarmHistory(history)
 
+                // 알림 비활성화 (중복 발송 방지)
+                alarmDao.updateAlarmEnabled(alarm.id, false)
+                Timber.i("checkAlarms: 알림 비활성화됨, alarmId=${alarm.id}")
+
                 Timber.i("checkAlarms: 알림 처리 완료, alarmId=${alarm.id}")
             }
         }
