@@ -13,6 +13,7 @@ import kim.yeonghoon.kospialarm.util.Result
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import timber.log.Timber
+import java.util.Calendar
 
 /**
  * 코스피 체크 WorkManager Worker.
@@ -42,6 +43,12 @@ class KospiCheckWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         Timber.d("KospiCheckWorker: 작업 시작")
 
+        // 한국 주식 거래시간 체크 (평일 09:00~15:30)
+        if (!isMarketOpen()) {
+            Timber.i("KospiCheckWorker: 장 마감 시간 - 작업 스킵")
+            return Result.success()
+        }
+
         return try {
             val kospiResult = repository.getCurrentKospiData()
 
@@ -59,7 +66,7 @@ class KospiCheckWorker @AssistedInject constructor(
                 }
 
                 is kim.yeonghoon.kospialarm.util.Result.Error -> {
-                    Timber.w("KospiCheckWorker: 코스피 데이터 조회 실패", kospiResult.exception)
+                    Timber.w("KospiCheckWorker: 코스피 데이터 조회 실패 - ${kospiResult.exception.message}", kospiResult.exception)
                     handleFailure()
                     Result.retry()
                 }
@@ -149,5 +156,33 @@ class KospiCheckWorker @AssistedInject constructor(
         Timber.d("resetFailureCount: 실패 카운트 리셋")
         // 실패 카운트는 WorkManager의 inputData로 관리되므로
         // 성공 시 자동으로 리셋됨
+    }
+
+    /**
+     * 한국 주식 시장 개장 시간 체크.
+     * 평일(월~금) 09:00~15:30
+     *
+     * @return 개장 시간이면 true, 아니면 false
+     */
+    private fun isMarketOpen(): Boolean {
+        val calendar = Calendar.getInstance()
+        val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
+        val hourOfDay = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
+
+        // 주말 체크 (토요일=7, 일요일=1)
+        if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
+            Timber.d("isMarketOpen: 주말 - 장 마감")
+            return false
+        }
+
+        // 시간 체크 (09:00~15:30)
+        val currentTimeInMinutes = hourOfDay * 60 + minute
+        val marketOpenTime = 9 * 60  // 09:00
+        val marketCloseTime = 15 * 60 + 30  // 15:30
+
+        val isOpen = currentTimeInMinutes in marketOpenTime..marketCloseTime
+        Timber.d("isMarketOpen: 현재시간=${hourOfDay}:${minute}, 개장여부=$isOpen")
+        return isOpen
     }
 }

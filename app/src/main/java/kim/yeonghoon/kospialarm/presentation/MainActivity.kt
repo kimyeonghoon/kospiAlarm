@@ -55,6 +55,10 @@ class MainActivity : ComponentActivity() {
         WorkManagerHelper.startPeriodicKospiCheck(this)
         Timber.i("MainActivity: WorkManager 시작됨")
 
+        // 매일 알림 스케줄링 (09:15, 15:15)
+        WorkManagerHelper.scheduleDailyKospiNotifications(this)
+        Timber.i("MainActivity: 매일 알림 스케줄링 완료")
+
         setContent {
             KospiAlarmTheme {
                 Surface(

@@ -20,6 +20,7 @@ object NotificationHelper {
     private const val CHANNEL_NAME = "KOSPI Alerts"
     private const val ALERT_NOTIFICATION_ID = 1000
     private const val API_FAILURE_NOTIFICATION_ID = 2000
+    private const val DAILY_KOSPI_NOTIFICATION_ID = 3000
 
     /**
      * 알림 채널 생성.
@@ -133,5 +134,47 @@ object NotificationHelper {
         notificationManager.notify(API_FAILURE_NOTIFICATION_ID, notification)
 
         Timber.i("showApiFailureNotification: API 실패 알림 표시 완료")
+    }
+
+    /**
+     * 매일 정해진 시간에 KOSPI 지수 알림 표시.
+     *
+     * @param context Context
+     * @param title 알림 제목
+     * @param message 알림 내용
+     */
+    fun showDailyKospiNotification(
+        context: Context,
+        title: String,
+        message: String
+    ) {
+        Timber.d("showDailyKospiNotification: 매일 알림 표시 시작")
+
+        // TODO: 실제 Activity로 변경
+        val intent = Intent() // Intent(context, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setVibrate(longArrayOf(0, 500, 200, 500))
+            .build()
+
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(DAILY_KOSPI_NOTIFICATION_ID, notification)
+
+        Timber.i("showDailyKospiNotification: 매일 알림 표시 완료")
     }
 }

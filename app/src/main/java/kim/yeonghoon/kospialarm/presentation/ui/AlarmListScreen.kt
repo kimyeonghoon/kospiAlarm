@@ -17,11 +17,6 @@ import kim.yeonghoon.kospialarm.domain.model.AlarmType
 import kim.yeonghoon.kospialarm.domain.model.KospiData
 import kim.yeonghoon.kospialarm.presentation.viewmodel.AlarmListUiState
 import kim.yeonghoon.kospialarm.presentation.viewmodel.AlarmListViewModel
-import androidx.compose.ui.platform.LocalContext
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import kim.yeonghoon.kospialarm.worker.KospiCheckWorker
-
 /**
  * 알림 목록 화면.
  *
@@ -32,10 +27,15 @@ import kim.yeonghoon.kospialarm.worker.KospiCheckWorker
 fun AlarmListScreen(
     viewModel: AlarmListViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val kospiData by viewModel.kospiData.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
+
+    // 현재 알림 개수 확인
+    val alarmCount = when (val state = uiState) {
+        is AlarmListUiState.Success -> state.alarms.size
+        else -> 0
+    }
 
     Scaffold(
         topBar = {
@@ -48,51 +48,63 @@ fun AlarmListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "알림 추가")
+            // 알림이 2개 미만일 때만 표시
+            if (alarmCount < 2) {
+                FloatingActionButton(onClick = { showDialog = true }) {
+                    Icon(Icons.Default.Add, contentDescription = "알림 추가")
+                }
             }
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // 투자 전략 가이드
+            item {
+                StrategyGuideCard()
+            }
+
             // 코스피 현재 정보
-            KospiInfoCard(
-                kospiData = kospiData,
-                onRefresh = { viewModel.loadKospiData() },
-                onTestPush = {
-                    // 즉시 WorkManager 실행하여 푸시 테스트
-                    val workRequest = OneTimeWorkRequestBuilder<KospiCheckWorker>().build()
-                    WorkManager.getInstance(context).enqueue(workRequest)
-                }
-            )
+            item {
+                KospiInfoCard(kospiData = kospiData)
+            }
 
             // 알림 목록
             when (val state = uiState) {
                 is AlarmListUiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
                     }
                 }
 
                 is AlarmListUiState.Success -> {
                     if (state.alarms.isEmpty()) {
-                        EmptyAlarmList()
+                        item {
+                            EmptyAlarmListContent()
+                        }
                     } else {
-                        AlarmList(
-                            alarms = state.alarms,
-                            onDeleteAlarm = { viewModel.deleteAlarm(it) }
-                        )
+                        items(state.alarms) { alarm ->
+                            AlarmCard(
+                                alarm = alarm,
+                                onDelete = { viewModel.deleteAlarm(alarm) }
+                            )
+                        }
                     }
                 }
 
                 is AlarmListUiState.Error -> {
-                    ErrorMessage(state.message)
+                    item {
+                        ErrorMessageContent(state.message)
+                    }
                 }
             }
         }
@@ -112,18 +124,59 @@ fun AlarmListScreen(
 }
 
 /**
+ * 투자 전략 가이드 카드.
+ */
+@Composable
+fun StrategyGuideCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "💡 투자 전략 가이드",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "• 매일 인버스 적립: 3,000원",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Text(
+                text = "• 롱 포지션: 절대 매도 금지",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Text(
+                text = "• 조정 시: 추가 매수 자금 활용",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "✓ 인버스 = 헷지 목적 (함부로 안 팔게 됨)\n✓ 롱 100% 유지 = 타이밍 놓칠 걱정 없음\n✓ 소액 루틴 = 충동적 결정 방지",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+            )
+        }
+    }
+}
+
+/**
  * 코스피 정보 카드.
  *
  * @param kospiData 코스피 데이터
- * @param onRefresh 새로고침 콜백
- * @param onTestPush 푸시 테스트 콜백
  */
 @Composable
-fun KospiInfoCard(
-    kospiData: KospiData?,
-    onRefresh: () -> Unit,
-    onTestPush: () -> Unit
-) {
+fun KospiInfoCard(kospiData: KospiData?) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -148,43 +201,10 @@ fun KospiInfoCard(
             } else {
                 Text("코스피 데이터를 불러오는 중...")
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(onClick = onRefresh) {
-                    Text("새로고침")
-                }
-                Button(onClick = onTestPush) {
-                    Text("푸시 테스트")
-                }
-            }
         }
     }
 }
 
-/**
- * 알림 목록.
- *
- * @param alarms 알림 목록
- * @param onDeleteAlarm 삭제 콜백
- */
-@Composable
-fun AlarmList(
-    alarms: List<Alarm>,
-    onDeleteAlarm: (Alarm) -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(alarms) { alarm ->
-            AlarmCard(alarm = alarm, onDelete = { onDeleteAlarm(alarm) })
-        }
-    }
-}
 
 /**
  * 알림 카드.
@@ -198,7 +218,9 @@ fun AlarmCard(
     onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
         Row(
             modifier = Modifier
@@ -234,12 +256,14 @@ fun AlarmCard(
 }
 
 /**
- * 빈 알림 목록 메시지.
+ * 빈 알림 목록 메시지 (LazyColumn item용).
  */
 @Composable
-fun EmptyAlarmList() {
+fun EmptyAlarmListContent() {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(32.dp),
         contentAlignment = Alignment.Center
     ) {
         Text("설정된 알림이 없습니다")
@@ -247,14 +271,16 @@ fun EmptyAlarmList() {
 }
 
 /**
- * 에러 메시지.
+ * 에러 메시지 (LazyColumn item용).
  *
  * @param message 에러 메시지
  */
 @Composable
-fun ErrorMessage(message: String) {
+fun ErrorMessageContent(message: String) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(32.dp),
         contentAlignment = Alignment.Center
     ) {
         Text("오류: $message", color = MaterialTheme.colorScheme.error)
@@ -290,7 +316,7 @@ fun AddAlarmDialog(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    listOf(5, 10, 15, 20).forEach { percentage ->
+                    listOf(5, 10).forEach { percentage ->
                         FilterChip(
                             selected = selectedPercentage == percentage,
                             onClick = { selectedPercentage = percentage },
