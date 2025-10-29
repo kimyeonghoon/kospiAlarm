@@ -220,6 +220,8 @@ fun AlarmCard(
     alarm: Alarm,
     onDelete: () -> Unit
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -252,10 +254,37 @@ fun AlarmCard(
                 )
             }
 
-            TextButton(onClick = onDelete) {
+            TextButton(onClick = { showDeleteDialog = true }) {
                 Text("삭제")
             }
         }
+    }
+
+    // 삭제 확인 다이얼로그
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("알림 삭제") },
+            text = {
+                val typeText = if (alarm.type == AlarmType.RISE) "상승" else "하락"
+                Text("${alarm.percentage}% $typeText 알림을 삭제하시겠습니까?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDelete()
+                    }
+                ) {
+                    Text("삭제")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("취소")
+                }
+            }
+        )
     }
 }
 
