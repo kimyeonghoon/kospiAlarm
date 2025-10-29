@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.ioniere.kospialarm"
+    namespace = "kim.yeonghoon.kospialarm"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.ioniere.kospialarm"
+        applicationId = "kim.yeonghoon.kospialarm"
         minSdk = 28
         targetSdk = 34
         versionCode = 1
@@ -95,11 +95,16 @@ dependencies {
     testImplementation("io.mockk:mockk:1.13.8")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("androidx.arch.core:core-testing:2.2.0")
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    testImplementation("androidx.work:work-testing:2.9.0")
 
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2023.10.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.work:work-testing:2.9.0")
+    androidTestImplementation("androidx.room:room-testing:2.6.1")
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
