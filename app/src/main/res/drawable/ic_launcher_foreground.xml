@@ -6,24 +6,35 @@
     android:viewportHeight="108">
 
     <group
-        android:scaleX="2.5"
-        android:scaleY="2.5"
-        android:translateX="29.5"
-        android:translateY="29.5">
+        android:scaleX="2.8"
+        android:scaleY="2.8"
+        android:translateX="25"
+        android:translateY="25">
 
-        <!-- 주식 차트 상승 아이콘 -->
+        <!-- 주식 차트 - 막대 그래프 스타일 -->
+        <!-- 막대 1 (낮음) -->
         <path
-            android:strokeColor="#FFFFFFFF"
-            android:strokeWidth="3"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round"
-            android:pathData="M3.5,15 L8,10 L12,14 L18,6" />
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M3,20 L6,20 L6,15 L3,15 Z" />
 
+        <!-- 막대 2 (중간) -->
         <path
-            android:strokeColor="#FFFFFFFF"
-            android:strokeWidth="3"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round"
-            android:pathData="M14,6 L18,6 L18,10" />
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M8,20 L11,20 L11,12 L8,12 Z" />
+
+        <!-- 막대 3 (높음) -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M13,20 L16,20 L16,8 L13,8 Z" />
+
+        <!-- 막대 4 (가장 높음) -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M18,20 L21,20 L21,5 L18,5 Z" />
+
+        <!-- 상승 화살표 -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M19.5,2 L22,4.5 L19.5,4.5 L19.5,2 Z" />
     </group>
 </vector>
